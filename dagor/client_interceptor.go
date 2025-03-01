@@ -51,16 +51,6 @@ func (d *Dagor) UnaryInterceptorClient(ctx context.Context, method string, req i
 			logger("[Client Sending Req] not an enduser and B or U not found in metadata, fatal error")
 			return status.Errorf(codes.InvalidArgument, "B or U not found in metadata, fatal error")
 		}
-		// // mark this client as end user
-		// d.isEnduser = true
-		// logger("No B or U received. Client %s marked as an end user", d.uuid)
-		// // attach user id to metadata
-		// ctx = metadata.AppendToOutgoingContext(ctx, "user-id", d.uuid)
-		// err := invoker(ctx, method, req, reply, cc, opts...)
-		// if err != nil {
-		// 	return err
-		// }
-		// return nil
 	}
 
 	var B, U int
@@ -80,10 +70,7 @@ func (d *Dagor) UnaryInterceptorClient(ctx context.Context, method string, req i
 		logger("[Ratelimiting] B %d and U %d values below the threshold B* %d and U* %d, request sent", B, U, threshold.Bstar, threshold.Ustar)
 	} else {
 		logger("[Ratelimiting] B* and U* values not found in the threshold table for method %s.", methodName[0])
-		// return status.Errorf(codes.ResourceExhausted, "B* and U* values not found in the threshold table, request dropped")
 	}
-	// Modify ctx with the B and U
-	// ctx = metadata.AppendToOutgoingContext(ctx, "b", strconv.Itoa(B), "u", strconv.Itoa(U))
 
 	// Invoking the gRPC call
 	var header metadata.MD

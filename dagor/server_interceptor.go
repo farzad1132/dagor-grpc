@@ -13,11 +13,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var currentThresholdB int = 0 // Initialize with default value
-var currentThresholdU int = 0 // Initialize with default value
-var currentThresholdBVal interface{}
-var currentThresholdUVal interface{}
-
 func (d *Dagor) UnaryInterceptorServer(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
 	methodNames, methodExists := md["method"]
@@ -83,36 +78,12 @@ func (d *Dagor) UnaryInterceptorServer(ctx context.Context, req interface{}, inf
 		}
 
 		// // Assign B based on method from businessMap or metadata
-		// if !BExists || len(BValues) == 0 {
-		// 	if businessValue, exists := d.businessMap[methodName]; exists {
-		// 		B = businessValue
-		// 	} else {
-		// 		return nil, status.Errorf(codes.Internal, "Business value for method %s not found", methodName)
-		// 	}
-		// 	logger("B value not provided in metadata, assigned B: %d", B)
-		// } else {
 		B, err = strconv.Atoi(BValues[0])
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "Invalid B value: %v", BValues[0])
 		}
 		logger("[DagorServer] B value provided in metadata: %d", B)
-		// }
 
-		// Assign U based on user-id from userPriority or metadata
-		// if !UExists || len(UValues) == 0 {
-		// 	if userIDExists && len(userIDs) > 0 {
-		// 		userID := userIDs[0]
-		// 		if val, ok := d.userPriority.Load(userID); ok {
-		// 			U = val.(int)
-		// 		} else {
-		// 			U = rand.Intn(100) // Assign a random int for U
-		// 			d.userPriority.Store(userID, U)
-		// 		}
-		// 	} else {
-		// 		return nil, status.Errorf(codes.InvalidArgument, "User ID not provided in metadata")
-		// 	}
-		// 	logger("U value not provided in metadata, assigned U: %d", U)
-		// } else {
 		U, err = strconv.Atoi(UValues[0])
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "Invalid U value: %v", UValues[0])
@@ -152,31 +123,6 @@ func (d *Dagor) UnaryInterceptorServer(ctx context.Context, req interface{}, inf
 	return resp, nil
 }
 
-// func (d *Dagor) UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-// 	md, _ := metadata.FromIncomingContext(ctx)
-// 	bValues := md.Get("B")
-// 	uValues := md.Get("U")
-
-// 	// Assuming single values for B and U
-// 	if len(bValues) > 0 && len(uValues) > 0 {
-// 		b, _ := strconv.Atoi(bValues[0])
-// 		u, _ := strconv.Atoi(uValues[0])
-
-// 		// If the request's B and U don't meet the threshold, drop the request
-// 		if b < currentThresholdB || u < currentThresholdU {
-// 			return nil, grpc.Errorf(codes.ResourceExhausted, "Request B, U values are below the threshold")
-// 		}
-// 	}
-
-// 	resp, err := handler(ctx, req)
-
-// 	// Attach B* and U* to the response metadata
-// 	newMD := metadata.Pairs("B*", strconv.Itoa(currentThresholdB), "U*", strconv.Itoa(currentThresholdU))
-// 	grpc.SendHeader(ctx, newMD)
-
-// 	return resp, err
-// }
-
 // overloadDetection is a function that detects overload and updates the threshold
 func (d *Dagor) UpdateAdmissionLevel() {
 	var prevHist *metrics.Float64Histogram
@@ -191,12 +137,6 @@ func (d *Dagor) UpdateAdmissionLevel() {
 		}
 		gapLatency := maximumQueuingDelayms(prevHist, currHist)
 
-		// // Load the current threshold values for B and U
-		// currentThresholdBVal, _ := d.admissionLevel.Load("B")
-		// currentThresholdUVal, _ := d.admissionLevel.Load("U")
-		// currentThresholdB := currentThresholdBVal.(int)
-		// currentThresholdU := currentThresholdUVal.(int)
-
 		// update the threshold
 		foverload := gapLatency > float64(d.queuingThresh.Milliseconds())
 		Bstar, Ustar := d.CalculateAdmissionLevel(foverload)
@@ -204,8 +144,6 @@ func (d *Dagor) UpdateAdmissionLevel() {
 		d.ResetHistogram()
 
 		// Update the admission level with the new values
-		// d.admissionLevel.Store("B", Bstar)
-		// d.admissionLevel.Store("U", Ustar)
 		// get and update the current threshold values for B and U
 		currentThresholdBVal, _ := d.admissionLevel.Swap("B", Bstar)
 		currentThresholdUVal, _ := d.admissionLevel.Swap("U", Ustar)
@@ -336,26 +274,5 @@ func (d *Dagor) CalculateAdmissionLevel(foverload bool) (int, int) {
 		}
 	}
 
-	// // Iterate over the range of B and U values. but notice that the loop starts from the max values.
-	// // the paper says that the loop starts from the min values, but it doesn't make sense to me.
-	// // for B := d.Bmax; B >= 1; B-- {
-	// // 	for U := d.Umax; U >= 1; U-- {
-	// for B := 1; B <= d.Bmax; B++ {
-	// 	for U := 1; U <= d.Umax; U++ {
-	// 		// Retrieve the count for this B, U combination from the C matrix
-	// 		val, loaded := d.C.Load([2]int{B, U})
-	// 		if loaded {
-	// 			Nprefix += val.(int64)
-	// 			if Nprefix > Nexp {
-	// 				logger("[CalculateAdmissionLevel] Nprefix %d > Nexp %d, B* %d, U* %d", Nprefix, Nexp, B, U)
-	// 				return Bstar, Ustar
-	// 				// } else {
-	// 				// logger("[CalculateAdmissionLevel] Nprefix %d <= Nexp %d, B* %d, U* %d", Nprefix, Nexp, B, U)
-	// 			}
-	// 		}
-	// 		Bstar, Ustar = B, U
-	// 	}
-	// }
-	// If the loop completes without returning, update the admission level with the max values
 	return Bstar, Ustar
 }

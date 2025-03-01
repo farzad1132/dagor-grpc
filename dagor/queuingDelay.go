@@ -2,62 +2,8 @@ package dagor
 
 import (
 	"fmt"
-	"log"
-	"math"
 	"runtime/metrics"
-	"time"
 )
-
-func medianBucket(h *metrics.Float64Histogram) float64 {
-	total := uint64(0)
-	for _, count := range h.Counts {
-		total += count
-	}
-
-	// round up thresh if total is odd
-	thresh := (total + 1) / 2
-	total = 0
-	// if count is 0, return the 2nd bucket
-	// for i, count := range h.Counts, but skip the first bucket
-	for i := 1; i < len(h.Counts); i++ {
-		total += h.Counts[i]
-		if total >= thresh {
-			return h.Buckets[i] * 1000
-		}
-	}
-	panic("should not happen")
-}
-
-func percentileBucket(h *metrics.Float64Histogram, percentile float64) float64 {
-	total := uint64(0)
-	for _, count := range h.Counts {
-		total += count
-	}
-
-	thresh := uint64(math.Ceil(float64(total) * (percentile / 100.0)))
-	total = 0
-
-	// Iterate through the histogram counts, starting from the second bucket
-	// and find the bucket that surpasses the threshold count.
-	for i := 1; i < len(h.Counts); i++ {
-		total += h.Counts[i]
-		if total >= thresh {
-			return h.Buckets[i] * 1000 // Convert to milliseconds
-		}
-	}
-
-	panic("should not happen")
-}
-
-// similarly, maximumBucket returns the maximum bucket
-func maximumBucket(h *metrics.Float64Histogram) float64 {
-	for i := len(h.Counts) - 1; i >= 0; i-- {
-		if h.Counts[i] != 0 {
-			return h.Buckets[i] * 1000
-		}
-	}
-	return 0
-}
 
 // To extract the difference between two Float64Histogram distributions, and return a new Float64Histogram
 // you can subtract the corresponding bucket counts of the two histograms.
@@ -106,29 +52,6 @@ func maximumQueuingDelayms(earlier, later *metrics.Float64Histogram) float64 {
 	return 0
 }
 
-func busyLoop(c chan<- int, quit chan bool) {
-	for {
-		if <-quit {
-			return
-		}
-	}
-}
-
-func computation(duration int) {
-	// Jiali: the following block implements the fake computation
-	quit := make(chan bool)
-	busyChan := make(chan int)
-	go busyLoop(busyChan, quit)
-	select {
-	case busyResult := <-busyChan:
-		log.Println(busyResult)
-	case <-time.After(time.Duration(duration) * time.Millisecond):
-		// log.Println("timed out")
-	}
-	quit <- true
-	return
-}
-
 // this function reads the currHist from metrics
 func readHistogram() *metrics.Float64Histogram {
 	// Create a sample for metric /sched/latencies:seconds and /sync/mutex/wait/total:seconds
@@ -157,11 +80,4 @@ func readHistogram() *metrics.Float64Histogram {
 	currHist := sample[0].Value.Float64Histogram()
 
 	return currHist
-}
-
-// func printHistogram(h *metrics.Float64Histogram) prints the content of histogram h
-func printHistogram(h *metrics.Float64Histogram) {
-	// fmt.Printf("Histogram: %v\n", h)
-	fmt.Printf("Buckets: %v\n", h.Buckets)
-	fmt.Printf("Counts: %v\n", h.Counts)
 }

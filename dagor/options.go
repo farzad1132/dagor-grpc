@@ -12,17 +12,15 @@ var debug bool
 
 // Dagor is the DAGOR network.
 type Dagor struct {
-	nodeName       string
-	uuid           string         // Only if nodeName is "Client"
-	businessMap    map[string]int // Maps methodName to int B
-	queuingThresh  time.Duration  // Overload control in milliseconds
-	userPriority   sync.Map       // Concurrent map from user to priority
-	thresholdTable sync.Map       // Concurrent map to keep B* and U* values for each downstream, key is method name
-	// userPriority   map[string]int          // Map from user to priority
-	// thresholdTable map[string]thresholdVal // Map to keep B* and U* values for each downstream, key is method name
-	entryService                 bool     // Entry service for the DAGOR network
-	isEnduser                    bool     // Is this node an end user?
-	admissionLevel               sync.Map // Map to keep track of admission level B and U
+	nodeName                     string
+	uuid                         string         // Only if nodeName is "Client"
+	businessMap                  map[string]int // Maps methodName to int B
+	queuingThresh                time.Duration  // Overload control in milliseconds
+	userPriority                 sync.Map       // Concurrent map from user to priority
+	thresholdTable               sync.Map       // Concurrent map to keep B* and U* values for each downstream, key is method name
+	entryService                 bool           // Entry service for the DAGOR network
+	isEnduser                    bool           // Is this node an end user?
+	admissionLevel               sync.Map       // Map to keep track of admission level B and U
 	admissionLevelUpdateInterval time.Duration
 	alpha                        float64
 	beta                         float64

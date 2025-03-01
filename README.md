@@ -16,7 +16,7 @@ In the DAGOR implementation, we use Go's **`sync.Map`** for concurrent data acce
 To install the `dagor-grpc` package, run the following command:
 
 ```bash
-go get -u github.com/Jiali-Xing/dagor-grpc
+go get -u github.com/pennsail/dagor-grpc
 ```
 
 Ensure that you have Go installed and your workspace is correctly configured.
@@ -29,7 +29,7 @@ To use `dagor` as a server interceptor, refer to the following example:
 
 ```go
 import (
-  "github.com/Jiali-Xing/dagor-grpc/dagor"
+  "github.com/pennsail/dagor-grpc/dagor"
   "google.golang.org/grpc"
 )
 
@@ -49,7 +49,7 @@ To integrate `dagor` as a client interceptor, consult the following example:
 
 ```go
 import (
-  "github.com/Jiali-Xing/dagor-grpc/dagor"
+  "github.com/pennsail/dagor-grpc/dagor"
   "google.golang.org/grpc"
 )
 

@@ -16,16 +16,24 @@ type ThresholdTable struct {
 	UStar int
 }
 
+func (d *Dagor) pickUser() string {
+	// Pick a user from the user vector in a round-robin fashion
+	user := d.userVector[d.userIndex]
+	d.userIndex = (d.userIndex + 1) % len(d.userVector)
+	return user
+}
+
 func (d *Dagor) UnaryInterceptorClient(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	// if d.isEnduser, attach user id to metadata and send request
 	if d.isEnduser {
-		ctx = metadata.AppendToOutgoingContext(ctx, "user-id", d.uuid)
+		userId := d.pickUser()
+		ctx = metadata.AppendToOutgoingContext(ctx, "user-id", userId)
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if err != nil {
-			logger("[End User] %s is an end user, req got error: %v", d.uuid, err)
+			logger("[End User] %s is an end user, req got error: %v", userId, err)
 			return err
 		}
-		logger("[End User] %s is an end user, req completed", d.uuid)
+		logger("[End User] %s is an end user, req completed", userId)
 		return nil
 	}
 

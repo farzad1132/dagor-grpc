@@ -33,6 +33,9 @@ type Dagor struct {
 	CM                           *CounterMatrix
 	// C is a two-dimensional array or a map that corresponds to the counters for each B, U pair.
 	// You need to initialize this with the actual data structure you are using.
+	numUsers   int
+	userIndex  int
+	userVector []string
 }
 
 type thresholdVal struct {
@@ -53,6 +56,7 @@ type DagorParam struct {
 	Bmax                         int
 	Debug                        bool
 	UseSyncMap                   bool
+	numUsers                     int
 }
 
 // NewDagorNode creates a new DAGOR node without a UUID.
@@ -74,10 +78,16 @@ func NewDagorNode(params DagorParam) *Dagor {
 		Bmax:                         params.Bmax,
 		UseSyncMap:                   params.UseSyncMap,
 		CM:                           NewCounterMatrix(params.Bmax, params.Umax),
+		numUsers:                     params.numUsers,
 	}
 	dagor.admissionLevel.Store("B", dagor.Bmax)
 	dagor.admissionLevel.Store("U", dagor.Umax)
 	rand.Seed(time.Now().UnixNano())
+
+	for i := 0; i < dagor.numUsers; i++ {
+		dagor.userVector = append(dagor.userVector, uuid.New().String())
+	}
+	dagor.userIndex = 0
 
 	if dagor.UseSyncMap {
 		// Initialize the C matrix with the initial counters for each B, U pair

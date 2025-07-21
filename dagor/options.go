@@ -56,7 +56,7 @@ type DagorParam struct {
 	Bmax                         int
 	Debug                        bool
 	UseSyncMap                   bool
-	numUsers                     int
+	NumUsers                     int
 }
 
 // NewDagorNode creates a new DAGOR node without a UUID.
@@ -78,7 +78,7 @@ func NewDagorNode(params DagorParam) *Dagor {
 		Bmax:                         params.Bmax,
 		UseSyncMap:                   params.UseSyncMap,
 		CM:                           NewCounterMatrix(params.Bmax, params.Umax),
-		numUsers:                     params.numUsers,
+		numUsers:                     params.NumUsers,
 	}
 	dagor.admissionLevel.Store("B", dagor.Bmax)
 	dagor.admissionLevel.Store("U", dagor.Umax)
